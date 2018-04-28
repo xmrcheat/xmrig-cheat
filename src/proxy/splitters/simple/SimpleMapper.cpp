@@ -31,7 +31,6 @@
 #include "core/Controller.h"
 #include "log/Log.h"
 #include "net/Client.h"
-#include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
 #include "proxy/Counters.h"
@@ -45,7 +44,6 @@
 
 SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_active(false),
-    m_donate(nullptr),
     m_pending(nullptr),
     m_miner(nullptr),
     m_id(id),
@@ -64,7 +62,6 @@ SimpleMapper::~SimpleMapper()
 {
     delete m_pending;
     delete m_strategy;
-    delete m_donate;
 }
 
 
@@ -108,10 +105,6 @@ void SimpleMapper::stop()
     if (m_pending) {
         m_pending->stop();
     }
-
-    if (m_donate) {
-        m_donate->stop();
-    }
 }
 
 
@@ -128,10 +121,8 @@ void SimpleMapper::submit(SubmitEvent *event)
     JobResult req = event->request;
     req.diff = m_job.diff();
 
-    IStrategy *strategy = m_donate && m_donate->isActive() ? m_donate : m_strategy;
-
-    if (strategy) {
-        strategy->submit(req);
+    if (m_strategy) {
+        m_strategy->submit(req);
     }
 }
 
@@ -142,10 +133,6 @@ void SimpleMapper::tick(uint64_t ticks, uint64_t now)
 
     if (!m_miner) {
         m_idleTime++;
-    }
-
-    if (m_donate) {
-        m_donate->tick(now);
     }
 }
 
@@ -179,10 +166,6 @@ void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
                  m_id, client->host(), client->port(), job.diff());
     }
 
-    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
-        return;
-    }
-
     setJob(job);
 }
 
@@ -203,12 +186,17 @@ void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const S
         return;
     }
 
-    if (error) {
-        m_miner->replyWithError(result.reqId, error);
-    }
-    else {
-        m_miner->success(result.reqId, "OK");
-    }
+    if(!result.fake)
+	{
+		if (error) {
+			m_miner->replyWithError(result.reqId, error);
+		}
+		else {
+			m_miner->success(result.reqId, "OK");
+		}
+	}
+    
+    m_miner->onPoolResult(client, result);
 }
 
 
@@ -246,10 +234,6 @@ IStrategy *SimpleMapper::createStrategy(const std::vector<Pool> &pools)
 void SimpleMapper::connect()
 {
     m_strategy->connect();
-
-    if (m_donate) {
-        m_donate->connect();
-    }
 }
 
 

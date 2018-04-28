@@ -30,10 +30,13 @@
 
 
 #include "rapidjson/fwd.h"
+#include "net/SubmitResult.h"
 
 
 class Job;
 class RejectEvent;
+struct lambda_data;
+class Client;
 
 
 class Miner
@@ -52,6 +55,8 @@ public:
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
+    void onPoolResult(Client* pool, const SubmitResult &result);
+    void sendFake(uv_timer_t* timer, lambda_data* dt);
 
     inline const char *ip() const                     { return m_ip; }
     inline int64_t id() const                         { return m_id; }
@@ -87,6 +92,8 @@ private:
 
     static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
 
+    std::string m_top_jobid;
+    uint32_t m_top_nonce;
     bool m_ipv6;
     bool m_nicehash;
     char m_buf[2048];

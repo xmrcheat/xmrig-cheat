@@ -36,6 +36,7 @@
 #include "net/SubmitResult.h"
 #include "net/Pool.h"
 #include "rapidjson/fwd.h"
+#include "core/Controller.h"
 
 
 class IClientListener;
@@ -66,6 +67,7 @@ public:
     void setPool(const Pool &pool);
     void tick(uint64_t now);
 
+	bool hasEarnedTrust();
     inline bool isReady() const              { return m_state == ConnectedState && m_failures == 0; }
     inline const char *host() const          { return m_pool.host(); }
     inline const char *ip() const            { return m_ip; }
@@ -104,6 +106,7 @@ private:
 
     static inline Client *getClient(void *data) { return m_storage.get(data); }
 
+	std::vector<uint8_t> m_trust_log;
     addrinfo m_hints;
     bool m_ipv6;
     bool m_nicehash;

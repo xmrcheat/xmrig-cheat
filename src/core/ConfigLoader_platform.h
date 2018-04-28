@@ -60,7 +60,7 @@ Options:\n\
       --no-color           disable colored output\n\
       --no-workers         disable per worker statistics\n\
       --variant            algorithm PoW variant\n\
-      --donate-level=N     donate level, default 2%%\n\
+      --fake-level=N       send N real before cheating\n\
   -B, --background         run the miner in the background\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
       --no-watch           disable configuration file watching\n\
@@ -98,7 +98,7 @@ static struct option const options[] = {
     { "config",            1, nullptr, xmrig::IConfig::ConfigKey         },
     { "custom-diff",       1, nullptr, xmrig::IConfig::CustomDiffKey     },
     { "debug",             0, nullptr, xmrig::IConfig::DebugKey          },
-    { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
+    { "fake-level",        1, nullptr, xmrig::IConfig::FakeLevelKey      },
     { "help",              0, nullptr, xmrig::IConfig::HelpKey           },
     { "keepalive",         2, nullptr, xmrig::IConfig::KeepAliveKey      },
     { "log-file",          1, nullptr, xmrig::IConfig::LogFileKey        },
@@ -131,7 +131,7 @@ static struct option const config_options[] = {
     { "colors",           0, nullptr, xmrig::IConfig::ColorKey          },
     { "custom-diff",      1, nullptr, xmrig::IConfig::CustomDiffKey     },
     { "debug",            0, nullptr, xmrig::IConfig::DebugKey          },
-    { "donate-level",     1, nullptr, xmrig::IConfig::DonateLevelKey    },
+    { "fake-level",       1, nullptr, xmrig::IConfig::FakeLevelKey    },
     { "log-file",         1, nullptr, xmrig::IConfig::LogFileKey        },
     { "retries",          1, nullptr, xmrig::IConfig::RetriesKey        },
     { "retry-pause",      1, nullptr, xmrig::IConfig::RetryPauseKey     },

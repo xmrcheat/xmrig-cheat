@@ -33,9 +33,9 @@
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result)
+    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, bool fake)
     {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result);
+        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, fake);
     }
 
 
@@ -49,9 +49,9 @@ public:
 
 
 protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result)
+    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, bool fake)
         : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result),
+          request(id, jobId, nonce, result, fake),
           m_error(Error::NoError)
     {}
 

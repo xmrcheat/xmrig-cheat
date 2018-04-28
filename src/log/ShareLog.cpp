@@ -87,9 +87,10 @@ void ShareLog::accept(const AcceptEvent *event)
         return;
     }
 
-    LOG_INFO(isColors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[01;30m(%" PRIu64 " ms)"
+    LOG_INFO(isColors() ? "#%03u \x1B[01;32m%s accepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") [ fake boost %.1f%% ] diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[01;30m(%" PRIu64 " ms)"
                         : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u ip %s (%" PRIu64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->result.elapsed);
+             event->mapperId(), event->result.fake ? "fake" : "real", m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, (double(m_stats.data().fakeHashes) / double(m_stats.data().hashes)) * 100.0,
+			 event->result.diff, event->ip(), event->result.elapsed);
 }
 
 
@@ -99,7 +100,7 @@ void ShareLog::reject(const AcceptEvent *event)
         return;
     }
 
-    LOG_INFO(isColors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
+    LOG_INFO(isColors() ? "#%03u \x1B[01;31m%s rejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
                         : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u ip %s \"%s\" (%" PRId64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
+             event->mapperId(), event->result.fake ? "fake" : "real", m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
 }

@@ -29,12 +29,13 @@
 #include "proxy/JobResult.h"
 
 
-JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result) :
+JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, bool fake) :
     nonce(nonce),
     result(result),
     id(id),
     diff(0),
     jobId(jobId, 3),
+    fake(fake),
     m_actualDiff(0)
 {
 }

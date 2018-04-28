@@ -19,7 +19,6 @@ set(HEADERS
     src/core/ConfigLoader_platform.h
     src/core/ConfigWatcher.h
     src/core/Controller.h
-    src/donate.h
     src/interfaces/IClientListener.h
     src/interfaces/IConfig.h
     src/interfaces/IConfigCreator.h
@@ -42,7 +41,6 @@ set(HEADERS
     src/net/Job.h
     src/net/Pool.h
     src/net/Storage.h
-    src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
     src/Platform.h
@@ -99,7 +97,6 @@ set(SOURCES
     src/net/Client.cpp
     src/net/Job.cpp
     src/net/Pool.cpp
-    src/net/strategies/DonateStrategy.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp

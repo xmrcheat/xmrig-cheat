@@ -113,8 +113,8 @@ void Stats::accept(const AcceptEvent *event)
     m_data.accepted++;
     m_data.hashes += event->result.diff;
 
-    if (event->isDonate()) {
-        m_data.donateHashes += event->result.diff;
+    if (event->result.fake) {
+        m_data.fakeHashes += event->result.diff;
     }
 
     Counters::accepted++;

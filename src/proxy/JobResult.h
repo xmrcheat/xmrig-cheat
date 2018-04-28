@@ -43,7 +43,7 @@ public:
     {
     }
 
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result);
+    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, bool fake);
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
@@ -54,6 +54,7 @@ public:
     const int64_t id;
     uint32_t diff;
     xmrig::Id jobId;
+    bool fake;
 
 private:
     mutable uint64_t m_actualDiff;

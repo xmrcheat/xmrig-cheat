@@ -212,13 +212,13 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
     doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       stats.uptime(), allocator);
-    doc.AddMember("donate_level", m_controller->config()->donateLevel(), allocator);
+    doc.AddMember("fake_level",   m_controller->config()->fakeLevel(), allocator);
 
-    if (stats.hashes && stats.donateHashes) {
-        doc.AddMember("donated", normalize((double) stats.donateHashes / stats.hashes * 100.0), allocator);
+    if (stats.hashes && stats.fakeHashes) {
+        doc.AddMember("faked", normalize((double) stats.fakeHashes / stats.hashes * 100.0), allocator);
     }
     else {
-        doc.AddMember("donated", 0.0, allocator);
+        doc.AddMember("faked", 0.0, allocator);
     }
 }
 
@@ -278,7 +278,7 @@ void ApiRouter::getResults(rapidjson::Document &doc) const
     results.AddMember("avg_time",      stats.avgTime(), allocator);
     results.AddMember("latency",       stats.avgLatency(), allocator);
     results.AddMember("hashes_total",  stats.hashes, allocator);
-    results.AddMember("hashes_donate", stats.donateHashes, allocator);
+    results.AddMember("hashes_fake",   stats.fakeHashes, allocator);
 
     rapidjson::Value best(rapidjson::kArrayType);
     for (size_t i = 0; i < stats.topDiff.size(); ++i) {

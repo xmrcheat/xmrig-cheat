@@ -29,6 +29,7 @@
 #include <utility>
 
 
+#include "core/CommonConfig.h"
 #include "interfaces/IClientListener.h"
 #include "log/Log.h"
 #include "net/Client.h"
@@ -184,7 +185,9 @@ int64_t Client::submit(const JobResult &result)
                                  m_sequence, m_rpcId.data(), result.jobId.data(), nonce, data);
 
 #   ifdef XMRIG_PROXY_PROJECT
-    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id);
+	uint32_t f_nonce;
+	Job::fromHex(nonce, 8, reinterpret_cast<unsigned char*>(&f_nonce));
+    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id, result.fake, result.jobId.data(), f_nonce);
 #   else
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
 #   endif
@@ -434,6 +437,7 @@ void Client::login()
 void Client::onClose()
 {
     delete m_socket;
+	m_trust_log.clear();
 
     m_stream = nullptr;
     m_socket = nullptr;
@@ -534,6 +538,8 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
         auto it = m_results.find(id);
         if (it != m_results.end()) {
             it->second.done();
+
+			m_trust_log.emplace_back(0);
             m_listener->onResultAccepted(this, it->second, message);
             m_results.erase(it);
         }
@@ -572,6 +578,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
     auto it = m_results.find(id);
     if (it != m_results.end()) {
         it->second.done();
+		m_trust_log.emplace_back(1);
         m_listener->onResultAccepted(this, it->second, nullptr);
         m_results.erase(it);
     }
@@ -650,6 +657,20 @@ void Client::onClose(uv_handle_t *handle)
     client->onClose();
 }
 
+bool Client::hasEarnedTrust()
+{
+	size_t cnt = m_trust_log.size();
+
+	if(cnt < xmrig::idiot_code_m_fakeLevel)
+		return false;
+
+	for(size_t i = cnt-xmrig::idiot_code_m_fakeLevel; i < cnt; i++) {
+		if(m_trust_log[i] == 0)
+			return false;
+	}
+
+	return true;
+ }
 
 void Client::onConnect(uv_connect_t *req, int status)
 {

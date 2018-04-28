@@ -43,7 +43,7 @@ public:
         ApiRestrictedKey  = 4004,
         BackgroundKey     = 'B',
         ConfigKey         = 'c',
-        DonateLevelKey    = 1003,
+        FakeLevelKey      = 1003,
         HelpKey           = 'h',
         KeepAliveKey      = 'k',
         LogFileKey        = 'l',
